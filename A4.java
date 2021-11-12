@@ -29,23 +29,22 @@ public class A4 extends Application
     @Override
     public void start(Stage stage)
     {
-        
-        // Create a Button or any control item
-        Button myButton = new Button("Count");
-        
+
         // Create a new grid pane
         GridPane pane = new GridPane();
         pane.setPadding(new Insets(10, 10, 10, 10));
         pane.setMinSize(300, 300);
         pane.setVgap(10);
         pane.setHgap(10);
-        pane.setStyle( "-fx-fill: blue" );
-        //set an action on the button using method reference
-        myButton.setOnAction(this::buttonClick);
+        pane.setStyle("-fx-background-color: blue");
+        for (int i = 0; i < board.length; i++)
 
-        // Add the button and label into the pane
-        
-        pane.add(myButton, 0, 0);
+            for (int j = 0; j < board[0].length; j++)
+            {
+                board[i][j] = 0;
+                String buttonName = String.valueOf(j+i);
+                pane.add(new Button(buttonName), i, j, 1, 1); //Button() replace with Token()
+            }    
 
         // JavaFX must have a Scene (window content) inside a Stage (window)
         Scene scene = new Scene(pane, 300,100);
@@ -55,7 +54,12 @@ public class A4 extends Application
         // Show the Stage (window)
         stage.show();
     }
-
+    
+    public class Token extends Circle
+    {
+        
+    }
+    
     /**
      * This will be executed when the button is clicked
      * It increments the count by 1
@@ -63,6 +67,6 @@ public class A4 extends Application
     private void buttonClick(ActionEvent event)
     {
         // Counts number of button clicks and shows the result on a label
-        
+
     }
 }
