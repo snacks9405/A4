@@ -7,7 +7,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
-import java.awt.Color;
+import javafx.scene.shape.Circle;
 
 /**
  * Write a description of JavaFX class A4 here.
@@ -34,8 +34,8 @@ public class A4 extends Application
         GridPane pane = new GridPane();
         pane.setPadding(new Insets(10, 10, 10, 10));
         pane.setMinSize(300, 300);
-        pane.setVgap(10);
-        pane.setHgap(10);
+        pane.setVgap(25);
+        pane.setHgap(25);
         pane.setStyle("-fx-background-color: blue");
         for (int i = 0; i < board.length; i++)
 
@@ -57,7 +57,10 @@ public class A4 extends Application
     
     public class Token extends Circle
     {
-        
+        public Token (int row, int col, int player)
+        {
+            
+        }
     }
     
     /**
