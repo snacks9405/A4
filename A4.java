@@ -9,6 +9,9 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import javafx.scene.shape.Circle;
 
+import java.awt.event.MouseEvent;
+import javafx.scene.paint.Color;
+
 /**
  * Write a description of JavaFX class A4 here.
  *
@@ -19,6 +22,10 @@ public class A4 extends Application
 {
     // We keep track of the count, and label displaying the count:
     private int[][] board = new int[7][6];
+    
+    private static int padding = 25;
+    private static int cellSize = 50;
+    private Label displayMessage;
     /**
      * The start method is the main entry point for every JavaFX application. 
      * It is called after the init() method has returned and after 
@@ -32,44 +39,43 @@ public class A4 extends Application
 
         // Create a new grid pane
         GridPane pane = new GridPane();
-        pane.setPadding(new Insets(10, 10, 10, 10));
-        pane.setMinSize(300, 300);
-        pane.setVgap(25);
-        pane.setHgap(25);
-        pane.setStyle("-fx-background-color: blue");
-        for (int i = 0; i < board.length; i++)
+        pane.setHgap(padding);
+        pane.setVgap(padding);
+        pane.setPadding(new Insets(padding));
+        for (int i = 0; i < board.length; i++) {
 
             for (int j = 0; j < board[0].length; j++)
             {
                 board[i][j] = 0;
-                String buttonName = String.valueOf(j+i);
-                pane.add(new Button(buttonName), i, j, 1, 1); //Button() replace with Token()
-            }    
+                Token t = new Token(i, j);
+                pane.add(t, i, j, 1, 1);
+            }
+        }
 
-        // JavaFX must have a Scene (window content) inside a Stage (window)
-        Scene scene = new Scene(pane, 300,100);
+        // FOR SOME REASON commenting this line out fixes background?.....
+        displayMessage = new Label("Hello");
+        //pane.add(displayMessage, 0, board[0].length + 1, board.length-1, 1);
+        
+        
+        int w = (cellSize+padding) * board.length + padding;
+        int h = (cellSize+padding) * board[0].length    + padding;
+        h += cellSize;
+        Scene scene = new Scene(pane, w, h, Color.BLUE);
         stage.setTitle("Connect 4 Game");
         stage.setScene(scene);
-
-        // Show the Stage (window)
+        
         stage.show();
     }
     
     public class Token extends Circle
     {
-        public Token (int row, int col, int player)
+        public Token (int row, int col)
         {
-            
+            super((cellSize)/2);
+            setFill(Color.WHITE);
+            setOnMousePressed(event -> {
+                setFill(Color.RED);
+            });
         }
-    }
-    
-    /**
-     * This will be executed when the button is clicked
-     * It increments the count by 1
-     */
-    private void buttonClick(ActionEvent event)
-    {
-        // Counts number of button clicks and shows the result on a label
-
     }
 }
