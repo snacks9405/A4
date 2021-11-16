@@ -15,6 +15,8 @@ import java.awt.event.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Write a description of JavaFX class A4 here.
  *
@@ -29,7 +31,7 @@ public class A4 extends Application
     private static int padding = 25;
     private static int cellSize = 50;
     private Label displayMessage;
-    boolean gameOver = false;
+    private boolean gameover = false;
     /**
      * The start method is the main entry point for every JavaFX application. 
      * It is called after the init() method has returned and after 
@@ -49,65 +51,49 @@ public class A4 extends Application
 
         Token[][] tokens = new Token[7][6];
         Random rand = new Random();
-        for (int i = 0; i < board.length; i++) {
+        for (int i = 0; i < board.length; i++)
+        {
             for (int j = 0; j < board[0].length; j++)
             {
+                //    (i, j)   ->   (x, y)
                 board[i][j] = 0;
-                Token t = new Token(i, j);
-                tokens[i][j] = t;
+                Token token = new Token(i, j);
+                tokens[i][j] = token;
                 //pane.add(t, i, j, 1, 1);
-                pane.add(t, i, j);
-                t.setOnMousePressed(event -> {
-                        // NOT VALID MOVE
-                        if (!gameOver)
-                        {    
-                            if(board[t.row][0] != 0) 
-                            {   
+                pane.add(token, i, j);
+                token.setOnMousePressed(event -> {
+                        if (!gameover)
+                        {
+                            int col = token.col;
+                            int row;
+                            // PLAY PLAYERS MOVE
+                            if((row = token.playTokenColor(tokens, 1, Color.YELLOW)) == -1)
+                            {
                                 displayMessage.setText("The column is full. Try again!");
                                 return;
                             }
-                            // PLAY PLAYERS MOVE
-                            for(int k=board[t.row].length-1; k>=0; --k)
-                            {
-                                if(board[t.row][k] == 0)
-                                {
-                                    tokens[t.row][k].setFill(Color.YELLOW);
-                                    board[t.row][k] = 1;
-                                    break;
-                                }
-                            }
+                            // Test victory / tie (player)
+                            int playerVictory = tokens[col][row].isVictory();
+                            if(token.applyContinueText(playerVictory, "", "You won!!", "You tied!!", ""))
+                                return;
+                                
+                            
                             // PLAY COMPUTER'S MOVE
-                            int row;
-                            boolean valid = false;
                             do
                             {
-                                row = rand.nextInt(board.length);
-                                for(int k=board[row].length-1; k>=0; --k)
-                                {
-                                    if(board[row][k] == 0)
-                                    {
-                                        tokens[row][k].setFill(Color.RED);
-                                        board[row][k] = 2;
-                                        valid = true;
-                                        displayMessage.setText("The computer played in column " + (row + 1));
-                                        break;
-                                    }
-                                }
-                            } while(!valid);
-
-                            for (int k = 0; k < board.length; k++)
-                            {
-                                if (board[k][0] == 0)
-                                    break;
-                                if (k == board.length - 1 && board[k][0] != 0)
-                                {
-                                    gameOver = true;
-                                    displayMessage.setText(displayMessage.getText() + " and tied!");
-                                }
-                            }
-                            if (!gameOver)
-                                displayMessage.setText(displayMessage.getText() + ". Your turn!");
-                        }});
+                                col = rand.nextInt(board.length);
+                            } while((row = tokens[col][0].playTokenColor(tokens, 2, Color.RED)) == -1);
+                            
+                            // Test victory / tie (computer)
+                            int compVictory = tokens[col][row].isVictory();
+                            if(tokens[col][row].applyContinueText(compVictory,
+                                "The computer played in column " + (col+1),
+                                " and won",
+                                " and tied!",
+                                ". Your turn!"))
+                                return;
+                        }
+                    });
             }
             // Create Bottom Number
             Label nLabel = new Label((i+1) + "");
@@ -118,7 +104,7 @@ public class A4 extends Application
         pane.setStyle("-fx-background-color: blue; -fx-margin: 50%;");
 
         displayMessage = new Label("It's your turn to play...");
-        displayMessage.setFont(Font.font("Comic Sans MS", 18));   
+        displayMessage.setFont(Font.font("Comic Sans MS", 18));
         displayMessage.setStyle("-fx-text-fill: aqua;");
 
         pane.setHalignment(displayMessage, HPos.CENTER);
@@ -134,16 +120,138 @@ public class A4 extends Application
         stage.show();
     }
 
-    public class Token extends Circle
+    private class Token extends Circle
     {
         int row, col;
-        public Token (int row, int col)
+        public Token (int col, int row)
         {
             super((cellSize)/2);
             this.row = row;
             this.col = col;
 
             setFill(Color.WHITE);
+        }
+        
+        /*
+         * Applys text to the main label based on the state and parameters
+         * 
+         * @param victoryState   the state of victory
+         * @param prefix         first part of message, always displayed.
+         * @param victoryText    tail of the message, displayed on victory
+         * @param tieText        tail of the message, displayed on tie
+         * @param defaultText    tail of the message, displayed on no-victory
+         * 
+         * @return true if the game is over (based on victoryState)
+         * 
+         */
+        public boolean applyContinueText(int victoryState, String prefix, String victoryText, String tieText, String defaultText)
+        {
+            String message = prefix;
+            switch(victoryState)
+            {
+                case 1: // Victory
+                    message += victoryText;
+                    break;
+                case 3: // tieText
+                    message += tieText;
+                    break;
+                default: // non-victory
+                    message += defaultText;
+                    break;
+            }
+            displayMessage.setText(message);
+            
+            gameover = victoryState != 0;
+            return gameover;
+        }
+        
+        /*
+         * Plays a token
+         * 
+         * @param tokens   an array filled with all token objects (for color manipulation)
+         * @param id       the id of the token user
+         * @param color    the color that will be set
+         * 
+         * @return the column the token was played (-1 if invalid move)
+         */
+        public int playTokenColor(Token[][] tokens, int id, Color color)
+        {
+            
+            for(int k=board[col].length-1; k>=0; --k)
+            {
+                if(board[col][k] == 0)
+                {
+                    tokens[col][k].setFill(color);
+                    board[col][k] = id;
+                    return k;
+                }
+            }
+            return -1;
+        }
+        
+        
+        /*
+         * Tests if a this cell contains a victory condition
+         * 
+         * @return 0 if no victory, 1 if victory, 2 if tie
+         */
+        public int isVictory()
+        {
+            int id = board[col][row];
+            if(id == 0) return 0;
+                            
+            boolean victory = isVictoryInDirection(id, 1, 0)   // horizontal
+                || isVictoryInDirection(id, 0, 1)   // vertical
+                || isVictoryInDirection(id, 1, 1)   // diagnol, up
+                || isVictoryInDirection(id, 1, -1);  // diagnol, down
+            if(victory) return 1;
+            
+            boolean tie = true;
+            for(int i=0; i<board.length; i++)
+                if(board[i][0] == 0) tie = false;
+            return tie ? 2 : 0;
+        }
+        
+        /*
+         * Helper function for testing victory state
+         * 
+         * @param id   the id to test against (1 for player, 2 for computer)
+         * @param dx   delta x: direction to test victory state
+         * @param dy   delta y: direction to test victory state
+         * 
+         * @return if there is a victory in the given direction
+         */
+        private boolean isVictoryInDirection(int id, int dx, int dy)
+        {
+            for(int i=0; i<4; i++)
+            {
+                boolean victory = true;
+                for(int j=0; j<4; j++)
+                {
+                    int x = col + (j - i) * dx;
+                    int y = row + (j - i) * dy;
+                    
+                    
+                    if(!isPositionValid(x, y) || board[x][y] != id)
+                    {
+                        victory = false;
+                        break;
+                    }
+                }
+                if(victory) return true;
+            }
+            
+            return false;
+        }
+        
+        /*
+         * Tests if a position is within the bounds of the board
+         * 
+         * @return if the position is valid
+         */
+        private boolean isPositionValid(int x, int y)
+        {
+            return x >= 0 && x < board.length && y >= 0 && y < board[x].length;
         }
     }
 }
